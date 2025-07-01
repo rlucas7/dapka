@@ -1,0 +1,62 @@
+# More details about what can go in this file:
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+
+[project]
+
+name = "collections2"
+description = "An example package demonstrating how to make one"
+
+readme = "README.md"
+
+authors = [
+    {name = "Lucas Roberts", email = "rlucas7@vt.edu"},
+]
+
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+
+requires-python = ">= 3.11"
+
+dependencies = []
+
+dynamic = ["version"]
+
+
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
+# this one allows pytest to discover the editable install
+# without this the tests don't get picked up
+pythonpath = "src"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+# For smarter version schemes and other configuration options,
+# check out https://github.com/pypa/setuptools_scm
+version_scheme = "no-guess-dev"
+#local_scheme = "dirty-tag"
+## some other common options, you can have only 1 `version_scheme`
+
+#version_scheme = "post-release"
+#version_scheme = "release-branch-semver"
+#version_file = "cpclr/_version.py" # only if you use a version file
+
+# If you have a setup.py file then you need to add:
+# setup_requires=['setuptools_scm'],
+# in the kwargs of the setup() class in setup.py file

@@ -1,0 +1,14 @@
+# Packages to install for working on the project.
+# These will not be installed when someone else installs your project.
+
+
+build
+twine
+
+
+# you may  want to have some sort of unit tests
+# these aren't stricly required but are very useful
+
+# if you're in a hurry you can omit adding more than default
+
+pytest
