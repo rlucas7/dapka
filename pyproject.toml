@@ -3,8 +3,8 @@
 
 [project]
 
-name = "collections2"
-description = "An example package demonstrating how to make one"
+name = "dapka"
+description = "A package to accompany the Declarative And Procedural Knowledge in Agents (DAPKA) research"
 
 readme = "README.md"
 
@@ -22,7 +22,9 @@ classifiers = [
 
 requires-python = ">= 3.11"
 
-dependencies = []
+dependencies = [
+    "PyGithub>=2.6.1",
+]
 
 dynamic = ["version"]
 

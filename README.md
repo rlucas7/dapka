@@ -1,6 +1,12 @@
-# collections2
-A simple package to test out the release notes from drafter github action 
+# DAPKA
 
+Project repo for: Declarative And Procedural Knowledge in Agents (DAPKA).
+
+# binary dependencies
+
+The package assumes you have `gh` and `jq` cli installed and available.
+The `gh` cli should be authenticated with the user whose behalf the
+repository mining will be conducted.
 
 # editable install
 
@@ -18,7 +24,6 @@ python3 -m pip install -e .
 
 now the local env has an editable install
 
-
 # running tests
 
 in the top level of the package you cloned locally do:
@@ -27,7 +32,6 @@ pytest  tests
 ```
 
 if anything fails then try to get the cases to pass
-
 
 # updating version
 when you tag a commit for a release you must do:
