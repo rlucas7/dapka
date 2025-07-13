@@ -46,3 +46,12 @@ which gives:
 As examples where the user location is currently a city, `null`, and `city, province, country` respectively.
 ```
 note that Yoshua Bengio is a professor at U. of Montreal, e.g. he (likely) lives in Quebec, in or near Outrement.
+
+# Search for pull requests
+
+```bash
+gh search prs  copilot
+# increase from 30 results (default) filter to `github.com/microsoft/*` repos
+gh search prs  copilot --limit 1000 --owner microsoft
+```
+

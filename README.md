@@ -101,4 +101,26 @@ Another example that currently works is:
 ```bash
 python3 -i src/dapka/repo_utils.py --owner liususan091219  --repo cs541 --AILogin coderabbitai
 python3 -i src/dapka/repo_utils.py --owner liususan091219  --repo cs541 --AILogin copilot-pull-request-reviewer
+#NOTE: appears empty...? There may be some lag, the open PR for this next one is < 2hrs old and does not appear yet...
+python3 -i src/dapka/repo_utils.py --owner ivuorinen --repo base-configs-stylelint --AILogin coderabbitai
+python3 -i src/dapka/repo_utils.py --owner obophenotype  --repo uberon --AILogin copilot-pull-request-reviewer # in REPL check `pr_2_AI_reviews[3580]`
+python3 -i src/dapka/repo_utils.py --owner Azure  --repo azure-sdk-for-js --AILogin copilot-pull-request-reviewer --limit 1000
+python3 -i src/dapka/repo_utils.py --owner AuraFrameFxDev  --repo AuraFrameFX-Alpha --AILogin coderabbitai
+python3 -i src/dapka/repo_utils.py --owner bradthebeeble  --repo coderabbitai-mcp --AILogin coderabbitai
+python3 -i src/dapka/repo_utils.py --owner DestinyItemManager  --repo DIM --AILogin copilot-pull-request-reviewer
+python3 -i src/dapka/repo_utils.py --owner microsoft  --repo vscode --AILogin copilot-pull-request-reviewer --limit 1000
+python3 -i src/dapka/repo_utils.py --owner microsoft  --repo onnxruntime --AILogin copilot-pull-request-reviewer --limit 1000
 ```
+
+Note for all of the above results the `-i` puts you into a python REPL and you can check the rate of 1 or more reviews
+by PRs returned via:
+
+```bash
+100*sum([len(val) > 0 for key, val in pr_2_AI_reviews.items()]) / len( pr_2_AI_reviews)
+```
+
+For the `vscode` repo I get 0.3% and for the `onnxruntime` I get 9.1% , and Azure's `azure-sdk-for-js` is 63.1%
+so it's highly variable.
+
+Note that these percentages exist at a point in time and will surely change with time and also varying the parameters
+of the requests.

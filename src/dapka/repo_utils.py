@@ -115,7 +115,7 @@ def get_pr_comments(owner: str, repo: str, login:str, limit:int = 50000) -> list
     # TODO: make this function more robust and handle no reviews case...
     logger.info(f"Getting pull requests with comments in {owner}/{repo}")
     # now we need to get the PR numbers from the comments
-    cmd = f"gh pr list --repo {owner}/{repo} --state all --json number,reviews"
+    cmd = f"gh pr list --repo {owner}/{repo} --state all --json number,reviews --limit {limit}"
     gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     # Parse the output to extract pull request numbers and review ids
     pr_nums_n_comments = loads(gh_cli_output.stdout)
