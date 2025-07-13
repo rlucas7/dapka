@@ -124,3 +124,10 @@ so it's highly variable.
 
 Note that these percentages exist at a point in time and will surely change with time and also varying the parameters
 of the requests.
+
+to generate a csv file of raw data from a repo:
+
+```bash
+python3 src/dapka/cli.py --owner Azure  --repo azure-sdk-for-js --AILogin copilot-pull-request-reviewer --limit 1000
+```
+and the output will be in the `pr_reviews.csv` file on your local filesystem.
