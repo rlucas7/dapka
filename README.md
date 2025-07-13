@@ -84,7 +84,7 @@ Run `git clone` to clone the repo locally, then navigate to the root of the repo
 ```bash
 python3 src/dapka/repo_utils.py --owner rlucas7 --repo suggerere
 ```
-and provided your `gh` cli is authenticated with your github account and you have `jq` available on your path as well, 
+and provided your `gh` cli is authenticated with your github account and you have `jq` available on your path as well,
 you will see something like:
 
 ```bash
@@ -94,3 +94,11 @@ Pull requests with Copilot comments: defaultdict(<class 'list'>, {1: [{'id': 'PR
 ```
 
 though the exact results may change if we do multiple reviews on the `suggerere` repo, currenly July 13th, 2025 there is only 1 PR with copilot reviews.
+
+
+Another example that currently works is:
+
+```bash
+python3 -i src/dapka/repo_utils.py --owner liususan091219  --repo cs541 --AILogin coderabbitai
+python3 -i src/dapka/repo_utils.py --owner liususan091219  --repo cs541 --AILogin copilot-pull-request-reviewer
+```

@@ -20,8 +20,6 @@ from collections import defaultdict
 from json import loads
 from typing import Union
 
-from github import Github
-
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Get map of pull requests with Copilot comments.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -41,6 +39,13 @@ parser.add_argument(
     "--limit",
     type=int,
     default=50000,
+    help="The maximum number of pull requests to fetch.",
+)
+parser.add_argument(
+    "--AILogin",
+    type=str,
+    default="copilot-pull-request-reviewer",
+    choices=["copilot-pull-request-reviewer", "github-copilot", "coderabbitai"],
     help="The maximum number of pull requests to fetch.",
 )
 
@@ -95,60 +100,36 @@ def get_list_of_all_prs(owner: str, repo: str, limit:int = 50000) -> list[int]:
     logger.info(f"Found {len(pr_numbers)} pull requests in {owner}/{repo}")
     return pr_numbers
 
-def get_prs_with_copilot_comments(owner: str, repo: str, limit:int = 50000, login:str = "copilot-pull-request-reviewer") -> tuple[list[dict], list[str]]:
+def get_pr_comments(owner: str, repo: str, login:str, limit:int = 50000) -> list[dict]:
     """Get a list of pull requests with Copilot comments.
 
     Args:
         owner (str): The owner of the repository.
         repo (str): The name of the repository.
-        limit (int): The maximum number of pull requests to fetch.
+        login (str): The login of the AI reviewer (e.g., 'copilot-pull-request-reviewer') for which we want to fetch the comments.
+        limit (int): The maximum number of pull requests to fetch. Defaults to 50000.
 
     Returns:
-        tuple[list[dict], list[int]]: First entry is a list of prs and the reviews, 
-        the second is a list of pull requests comment ids from Copilot comments.
+        list[dict]: a list of prs and the reviews
     """
     # TODO: make this function more robust and handle no reviews case...
-    cmd1 =f"gh pr list --repo {owner}/{repo} --state all --json reviews | jq '.[].reviews | map(select(.author.login == \"{login}\"))'"
-    gh_cli_output1 = subprocess.run(cmd1, shell=True, check=True, capture_output=True, text=True)
-    # Parse the output to extract pull request numbers
-    comments = loads(gh_cli_output1.stdout)
-    logger.info(f"Found {None} pull requests with Copilot comments in {owner}/{repo}")
-    ghcp_comment_ids = [comment.get("id") for comment in comments]
+    logger.info(f"Getting pull requests with comments in {owner}/{repo}")
     # now we need to get the PR numbers from the comments
-    cmd2 = f"gh pr list --repo {owner}/{repo} --state all --json number,reviews"
-    gh_cli_output2 = subprocess.run(cmd2, shell=True, check=True, capture_output=True, text=True)
+    cmd = f"gh pr list --repo {owner}/{repo} --state all --json number,reviews"
+    gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     # Parse the output to extract pull request numbers and review ids
-    pr_nums_n_reviews = loads(gh_cli_output2.stdout)
-    return pr_nums_n_reviews, ghcp_comment_ids
-
-def ghcp_pr_numbers(prs_with_reviews: list[dict], ghcp_comment_ids: list[str]) -> dict[int, list[dict]]:
-    """Make a map of pull requests and their reviews.
-
-    Args:
-        prs_with_reviews (list[dict]): A list of pull requests with their reviews.
-        ghcp_comment_ids (list[str]): A list of comment IDs from Copilot comments.
-
-    Returns:
-        list[int]: Alist of pull request numbers that have copilot comments.
-    """
-    pr_map = defaultdict(list)
-    for pr in prs_with_reviews:
-        pr_number = pr.get("number")
-        reviews = pr.get("reviews", [])
-        for review in reviews:
-            if review.get("id") in ghcp_comment_ids:
-                pr_map[pr_number].append(review)
-        logger.info(f"Found {len(pr_map[pr_number])} pull requests with Copilot")
-    return pr_map
-
+    pr_nums_n_comments = loads(gh_cli_output.stdout)
+    return pr_nums_n_comments
 
 
 if __name__ == "__main__":
     # Example usage-will return JSONDecodeError if run with erroneous owner/repo/limit
     args = parser.parse_args()
-    owner = args.owner
-    repo = args.repo
-    limit = args.limit
-    prs_with_reviews, ghcp_comment_ids = get_prs_with_copilot_comments(owner, repo, limit)
-    pr_map = ghcp_pr_numbers(prs_with_reviews, ghcp_comment_ids)
-    print(f"Pull requests with Copilot comments: {pr_map}")
+    owner, repo, limit, login = args.owner, args.repo, args.limit, args.AILogin
+    prs_with_reviews = get_pr_comments(owner, repo, login, limit)
+    # now filter to only those with copilot comments
+    pr_2_AI_reviews = dict()
+    for entry in prs_with_reviews:
+        pr_num, reviews = entry.get("number"), entry.get("reviews", [])
+        pr_2_AI_reviews[pr_num] = [review for review in reviews if review.get("author", {}).get("login") == login]
+    print(f"Pull requests with AILogin comments: {pr_2_AI_reviews}")
