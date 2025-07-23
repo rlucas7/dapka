@@ -13,12 +13,14 @@ The module is designed to be used as a standalone script or imported into other 
 # python3 -i repo_utils.py  --owner rlucas7 --repo suggerere
 """
 import argparse
+from locale import format_string
+from datetime import datetime as dt
 import logging
 import subprocess
 
 from collections import defaultdict
 from json import loads
-from typing import Union
+from typing import Union, Any
 
 logger = logging.getLogger(__name__)
 
@@ -74,11 +76,14 @@ def get_code_review_instructions(filepath_and_name:str = ".github/copilot-instru
         # Return None or a default message if the file is not found
         return None
 
-def get_list_of_all_prs(owner: str, repo: str, limit:int = 50000) -> list[int]:
+def get_list_of_all_prs(owner: str, repo: str, state:str = "merged", limit:int = 50000) -> list[int]:
     """Get a list of all pull requests from the repository
 
     Args:
-        repo_url (str): The URL of the repository to fetch PRs from.
+        owner (str): The owner of the repository.
+        repo (str): The name of the repository.
+        state (str): The state of the pull requests to fetch. Defaults to 'merged'. Options are 'open', 'closed', or 'all'.
+        limit (int): The maximum number of pull requests to fetch. Defaults to 50000.
 
     Returns:
         list[int]: A list of pull request URLs.
@@ -94,19 +99,20 @@ def get_list_of_all_prs(owner: str, repo: str, limit:int = 50000) -> list[int]:
     ```
     We assume that the GitHub CLI (`gh`) and `jq` are installed and configured on the system where this function is executed.
     """
-    cmd = f"gh pr list --repo {owner}/{repo} --state all -L {limit} --json number | jq '.[].number'"
+    cmd = f"gh pr list --repo {owner}/{repo} --state {state} -L {limit} --json number | jq '.[].number'"
     gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     pr_numbers = [int(pr_num) for pr_num in gh_cli_output.stdout.split('\n') if len(pr_num) > 0]
     logger.info(f"Found {len(pr_numbers)} pull requests in {owner}/{repo}")
     return pr_numbers
 
-def get_pr_comments(owner: str, repo: str, login:str, limit:int = 50000) -> list[dict]:
+def get_pr_comments(owner: str, repo: str, login:str, state:str = "all", limit:int = 50000) -> list[dict]:
     """Get a list of pull requests with Copilot comments.
 
     Args:
         owner (str): The owner of the repository.
         repo (str): The name of the repository.
         login (str): The login of the AI reviewer (e.g., 'copilot-pull-request-reviewer') for which we want to fetch the comments.
+        state (str): The state of the pull requests to fetch. Defaults to 'all'. Options are 'open', 'closed', or 'all'.
         limit (int): The maximum number of pull requests to fetch. Defaults to 50000.
 
     Returns:
@@ -115,18 +121,45 @@ def get_pr_comments(owner: str, repo: str, login:str, limit:int = 50000) -> list
     # TODO: make this function more robust and handle no reviews case...
     logger.info(f"Getting pull requests with comments in {owner}/{repo}")
     # now we need to get the PR numbers from the comments
-    cmd = f"gh pr list --repo {owner}/{repo} --state all --json number,reviews --limit {limit}"
+    cmd = f"gh pr list --repo {owner}/{repo} --state {state} --json number,reviews --limit {limit}"
     gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     # Parse the output to extract pull request numbers and review ids
     pr_nums_n_comments = loads(gh_cli_output.stdout)
     return pr_nums_n_comments
+
+def get_pr_open_closed_and_state(owner: str, repo: str, pr_number:int) -> dict[str, Any]:
+    """Get a list of pull requests with their open/closed state.
+    Args:
+        owner (str): The URL of the repository to fetch PRs from.
+        repo (str): The name of the repository.
+        pr_number (int): The pull request number to check.
+
+    Returns:
+        dict: A dictionary with pull request numbers as keys and their open/closed state as values.
+    """
+    json_fields = "updatedAt,mergedAt,mergedBy,isDraft,state,closed,closedAt,number,labels,author,createdAt"
+    cmd = f"gh pr view {pr_number!r} --repo {owner}/{repo} --json {json_fields}"
+    gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+    pr_state_data = loads(gh_cli_output.stdout)
+    pr_state = dict()
+    for key in json_fields.split(","):
+        pr_state[key] = pr_state_data.get(key)
+    format_string = "%Y-%m-%dT%H:%M:%SZ"
+    if pr_state['createdAt'] and pr_state['mergedAt']:
+        create_time = dt.strptime(pr_state['createdAt'], format_string)
+        merge_time = dt.strptime(pr_state['mergedAt'], format_string)
+        time_to_merge_seconds = merge_time - create_time
+        pr_state['time_to_merge_in_seconds'] = time_to_merge_seconds.total_seconds()
+    else:
+        pr_state['time_to_merge_in_seconds'] = None
+    return pr_state
 
 
 if __name__ == "__main__":
     # Example usage-will return JSONDecodeError if run with erroneous owner/repo/limit
     args = parser.parse_args()
     owner, repo, limit, login = args.owner, args.repo, args.limit, args.AILogin
-    prs_with_reviews = get_pr_comments(owner, repo, login, limit)
+    prs_with_reviews = get_pr_comments(owner=owner, repo=repo, login=login, state="merged", limit=limit)
     # now filter to only those with copilot comments
     pr_2_AI_reviews = dict()
     for entry in prs_with_reviews:
