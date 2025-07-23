@@ -121,7 +121,7 @@ def get_pr_comments(owner: str, repo: str, login:str, state:str = "all", limit:i
     # TODO: make this function more robust and handle no reviews case...
     logger.info(f"Getting pull requests with comments in {owner}/{repo}")
     # now we need to get the PR numbers from the comments
-    cmd = f"gh pr list --repo {owner}/{repo} --state {state} --json number,reviews --limit {limit}"
+    cmd = f"gh pr list --repo {owner}/{repo} --state {state} --json number,reviews,additions,deletions --limit {limit}"
     gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     # Parse the output to extract pull request numbers and review ids
     pr_nums_n_comments = loads(gh_cli_output.stdout)
@@ -137,7 +137,7 @@ def get_pr_open_closed_and_state(owner: str, repo: str, pr_number:int) -> dict[s
     Returns:
         dict: A dictionary with pull request numbers as keys and their open/closed state as values.
     """
-    json_fields = "updatedAt,mergedAt,mergedBy,isDraft,state,closed,closedAt,number,labels,author,createdAt"
+    json_fields = "updatedAt,mergedAt,mergedBy,isDraft,state,closed,closedAt,number,labels,author,createdAt,id,additions,deletions"
     cmd = f"gh pr view {pr_number!r} --repo {owner}/{repo} --json {json_fields}"
     gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     pr_state_data = loads(gh_cli_output.stdout)

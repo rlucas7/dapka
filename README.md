@@ -128,6 +128,6 @@ of the requests.
 to generate a csv file of raw data from a repo:
 
 ```bash
-python3 src/dapka/cli.py --owner Azure  --repo azure-sdk-for-js --AILogin copilot-pull-request-reviewer --limit 1000
+python3 src/dapka/cli.py --owner Azure  --repo azure-sdk-for-js --AILogin copilot-pull-request-reviewer --limit 100
 ```
 and the output will be in the `pr_reviews.csv` file on your local filesystem.

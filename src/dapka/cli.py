@@ -37,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     "--status",
     type=str,
-    default="all",
+    default="merged",
     choices=["open", "closed", "all", "merged"],
     help="The state of the pull requests to fetch.",
 )
@@ -65,6 +65,13 @@ parser.add_argument(
     action="store_true",
     help="Setting this flag causes the logs to be output to stdout",
 )
+parser.add_argument(
+    "--log_level",
+    type=str,
+    default="INFO",
+    choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    help="Set the logging level for the CLI.",
+)
 
 def main(args) -> pd.DataFrame:
     """Main function to handle the repository URL.
@@ -75,13 +82,17 @@ def main(args) -> pd.DataFrame:
     args = parser.parse_args()
     if args.use_stdout:
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(args.log_level)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
+    if args.log_level != "INFO":
+        print(f"Setting log level to {args.log_level}")
+        logger.setLevel(args.log_level)
     prs_with_reviews = get_pr_comments(owner=args.owner, repo=args.repo, login=args.AILogin, state=args.status, limit=args.limit)
     pr_2_AI_reviews = dict()
     for entry in prs_with_reviews:
+        logger.debug(f"Processing AI reviewed entry: {entry!r}")
         pr_num, reviews = entry.get("number"), entry.get("reviews", [])
         pr_2_AI_reviews[pr_num] = [review for review in reviews if review.get("author", {}).get("login") == args.AILogin]
     records = []
@@ -98,6 +109,8 @@ def main(args) -> pd.DataFrame:
                 "owner": args.owner,
                 "repo": args.repo,
                 "pr_state": pr_state,
+                "additions": pr_state.get("additions"),
+                "deletions": pr_state.get("deletions"),
             })
     df = pd.DataFrame(records)
     logger.info(f"Data for AI PRs processed")
@@ -116,16 +129,19 @@ def main(args) -> pd.DataFrame:
     # for now take the first N, TODO: make this more better
     for pr_num in non_ai_prs[:2*len(ai_review_pr_numbers)]:
         pr_state = get_pr_open_closed_and_state(args.owner, args.repo, pr_number=pr_num)
+        logger.debug(f"pr_state: {pr_state!r}")
         records.append({
                 "pr_number": pr_num,
-                "review_id": "N/A",
-                "author_login": "non-AI",
+                "review_id": pr_state.get("id"),
+                "author_login": "Non-AI Review",
                 "body": "N/A",
                 "state": "N/A",
                 "reviewed_at": "N/A",
                 "owner": args.owner,
                 "repo": args.repo,
                 "pr_state": pr_state,
+                "additions": pr_state.get("additions"),
+                "deletions": pr_state.get("deletions"),
             })
     non_ai_prs_df = pd.DataFrame(records)
     # now get the times of the two types of PRs
