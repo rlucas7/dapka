@@ -11,7 +11,7 @@ import sys
 import pandas as pd
 from math import log
 
-from graphics import plot_histogram
+from graphics import plot_histogram, scatterplots_ai_vs_non_ai
 from repo_utils import get_pr_comments, get_pr_open_closed_and_state, get_list_of_all_prs
 
 logging.basicConfig(level=logging.INFO,
@@ -20,6 +20,7 @@ logging.basicConfig(level=logging.INFO,
 
 logger = logging.getLogger(__name__)
 
+MAX_ATTEMPTS = 3
 # TODO: group the args here in a way that helps humans
 parser = argparse.ArgumentParser(description="Get map of pull requests with Copilot comments.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument(
@@ -98,20 +99,33 @@ def main(args) -> pd.DataFrame:
     records = []
     for key, val in pr_2_AI_reviews.items():
         for review in val:
-            pr_state = get_pr_open_closed_and_state(args.owner, args.repo, key)
-            records.append({
-                "pr_number": key,
-                "review_id": review.get("id"),
-                "author_login": review.get("author", {}).get("login"),
-                "body": review.get("body"),
-                "state": review.get("state"),
-                "reviewed_at": review.get("submittedAt"),
-                "owner": args.owner,
-                "repo": args.repo,
-                "pr_state": pr_state,
-                "additions": pr_state.get("additions"),
-                "deletions": pr_state.get("deletions"),
-            })
+            attempt = 0
+            while attempt < MAX_ATTEMPTS:
+                logger.debug(f"Processing PR {key!r} w/review: {review!r}")
+                try:
+                    pr_state = get_pr_open_closed_and_state(args.owner, args.repo, key)
+                    records.append({
+                        "pr_number": key,
+                        "review_id": review.get("id"),
+                        "author_login": review.get("author", {}).get("login"),
+                        "body": review.get("body"),
+                        "state": review.get("state"),
+                        "reviewed_at": review.get("submittedAt"),
+                        "owner": args.owner,
+                        "repo": args.repo,
+                        "pr_state": pr_state,
+                        "additions": pr_state.get("additions"),
+                        "deletions": pr_state.get("deletions"),
+                    })
+                    if pr_state is not None:
+                        logger.debug(f"Processed PR {key!r} with review {review.get('id')!r} successfully.")
+                        attempt = MAX_ATTEMPTS  # exit the loop
+                except Exception as e:
+                    logger.error(f"Failed to process PR {key!r} with review {review.get('id')!r}: {e}")
+                    attempt += 1
+                    if attempt >= MAX_ATTEMPTS:
+                        logger.error(f"Max attempts reached for PR {key!r}, skipping...")
+                        break
     df = pd.DataFrame(records)
     logger.info(f"Data for AI PRs processed")
     logger.info(f"# of PRs with AILogin comments: {len(pr_2_AI_reviews.keys())}")
@@ -164,4 +178,9 @@ if __name__ == "__main__":
         df = pd.read_csv("pr_reviews_with_and_wo_ai.csv")
     else:
         df = main(args)
+    df["lines_modified"] = df['additions'] + df['deletions']
     plot_histogram(df, 'author_login', 'time_to_merge_in_seconds', funcs=[log])
+    plot_histogram(df, 'author_login', 'lines_modified', funcs=[lambda x: log(1+x)])
+
+    ## Now some scratching to get the PRs with AI reviews
+    scatterplots_ai_vs_non_ai(df, column_name="author_login", x="lines_modified", y="time_to_merge_in_seconds", savefig=False)
