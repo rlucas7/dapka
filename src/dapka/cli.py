@@ -21,7 +21,8 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 3
-# TODO: group the args here in a way that helps humans
+# TODO: group the args here with subparsers
+#    and then add a subparsers argument
 parser = argparse.ArgumentParser(description="Get map of pull requests with Copilot comments.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument(
     "--owner",
@@ -47,6 +48,11 @@ parser.add_argument(
     action="store_true",
     help="Setting this flag causes the data to be collected against gh api and"
     "stored in local filesystem @ `pr_reviews_with_and_wo_ai.csv`.",
+)
+parser.add_argument(
+    "--save_figs",
+    action="store_true",
+    help="Setting this flag causes the plots to be saved in local filesystem.",
 )
 parser.add_argument(
     "--limit",
@@ -179,8 +185,15 @@ if __name__ == "__main__":
     else:
         df = main(args)
     df["lines_modified"] = df['additions'] + df['deletions']
-    plot_histogram(df, 'author_login', 'time_to_merge_in_seconds', funcs=[log])
-    plot_histogram(df, 'author_login', 'lines_modified', funcs=[lambda x: log(1+x)])
+    if args.save_figs:
+        plot_histogram(df, 'author_login', 'time_to_merge_in_seconds', funcs=[log], savefig=True)
+        plot_histogram(df, 'author_login', 'lines_modified', funcs=[lambda x: log(1+x)], savefig=True)
+    else:
+        plot_histogram(df, 'author_login', 'time_to_merge_in_seconds', funcs=[log])
+        plot_histogram(df, 'author_login', 'lines_modified', funcs=[lambda x: log(1+x)])
 
     ## Now some scratching to get the PRs with AI reviews
-    scatterplots_ai_vs_non_ai(df, column_name="author_login", x="lines_modified", y="time_to_merge_in_seconds", savefig=False)
+    if args.save_figs:
+        scatterplots_ai_vs_non_ai(df, column_name="author_login", x="lines_modified", y="lines_modified", savefig=True)
+    else:
+        scatterplots_ai_vs_non_ai(df, column_name="author_login", x="lines_modified", y="time_to_merge_in_seconds", savefig=False)

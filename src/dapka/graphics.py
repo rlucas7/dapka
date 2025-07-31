@@ -94,3 +94,4 @@ def plot_histogram(df: pd.DataFrame, column_name:str, metric_column_name:str, fu
             plt.show()
         plt.close(fig)
         logger.info(f"Plotting scatterplot for {column_name} and {y}")
+        logger.info("Done plotting scatterplots")
