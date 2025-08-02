@@ -194,6 +194,6 @@ if __name__ == "__main__":
 
     ## Now some scratching to get the PRs with AI reviews
     if args.save_figs:
-        scatterplots_ai_vs_non_ai(df, column_name="author_login", x="lines_modified", y="lines_modified", savefig=True)
+        scatterplots_ai_vs_non_ai(df, column_name="author_login", x="lines_modified", y="time_to_merge_in_seconds", savefig=True)
     else:
         scatterplots_ai_vs_non_ai(df, column_name="author_login", x="lines_modified", y="time_to_merge_in_seconds", savefig=False)
