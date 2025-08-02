@@ -155,7 +155,7 @@ def get_pr_open_closed_and_state(owner: str, repo: str, pr_number:int) -> dict[s
         gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to fetch pull request {pr_number} with exception: {e}")
-        logger.error(f"stdput: {e.output}")
+        logger.error(f"stdout: {e.output}")
         logger.error(f"stderr: {e.stderr}")
         raise e
     pr_state_data = loads(gh_cli_output.stdout)
