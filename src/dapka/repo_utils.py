@@ -104,7 +104,7 @@ def get_list_of_all_prs(owner: str, repo: str, state:str = "merged", limit:int =
         gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to fetch listing of pull requests: {e}")
-        logger.error(f"stdput: {e.output}")
+        logger.error(f"stdout: {e.output}")
         logger.error(f"stderr: {e.stderr}")
         raise e
     pr_numbers = [int(pr_num) for pr_num in gh_cli_output.stdout.split('\n') if len(pr_num) > 0]
