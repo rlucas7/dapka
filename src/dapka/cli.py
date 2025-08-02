@@ -89,13 +89,13 @@ def main(args) -> pd.DataFrame:
     args = parser.parse_args()
     if args.use_stdout:
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(args.log_level)
+        handler.setLevel(getattr(logging, args.log_level))
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
     if args.log_level != "INFO":
         print(f"Setting log level to {args.log_level}")
-        logger.setLevel(args.log_level)
+        logger.setLevel(getattr(logging, args.log_level))
     prs_with_reviews = get_pr_comments(owner=args.owner, repo=args.repo, login=args.AILogin, state=args.status, limit=args.limit)
     pr_2_AI_reviews = dict()
     for entry in prs_with_reviews:
