@@ -52,27 +52,27 @@ def plot_histogram(df: pd.DataFrame, column_name:str, metric_column_name:str, fu
         logger.info(f"Plotting histograms for {column_name} and {metric_column_name} with function: {func.__name__}")
 
 
-    def scatterplots_ai_vs_non_ai(df: pd.DataFrame, column_name:str, metric_column_name:str, x:str="lines_modified", y:str="time_to_merge_in_seconds", savefig:bool=False) -> None:
-        """Create scatter plots for AI vs non-AI reviews and fit linear regression lines.
+def scatterplots_ai_vs_non_ai(df: pd.DataFrame, column_name:str, metric_column_name:str, x:str="lines_modified", y:str="time_to_merge_in_seconds", savefig:bool=False) -> None:
+    """Create scatter plots for AI vs non-AI reviews and fit linear regression lines.
 
-        This function generates scatter plots comparing the x and y values.
-        By default x is time to merge and y is lines modified for AI reviews
-        versus non-AI reviews. It fits linear regression lines to both sets of data and displays the plots.
+    This function generates scatter plots comparing the x and y values.
+    By default x is time to merge and y is lines modified for AI reviews
+    versus non-AI reviews. It fits linear regression lines to both sets of data and displays the plots.
 
-        Args:
-            df (pd.DataFrame): The DataFrame containing the data.
-            column_name (str): The name of the column to slice the data.
-            metric_column_name (str): The name of the metric column to plot.
-            x (str): The name of the x-axis column.
-            y (str): The name of the y-axis column.
-            savefig (bool): If True, saves the figure instead of showing it.
+    Args:
+        df (pd.DataFrame): The DataFrame containing the data.
+        column_name (str): The name of the column to slice the data.
+        metric_column_name (str): The name of the metric column to plot.
+        x (str): The name of the x-axis column.
+        y (str): The name of the y-axis column.
+        savefig (bool): If True, saves the figure instead of showing it.
 
-        Returns:
-            None: Displays or saves the scatter plots.
-        """
-        A = list(set(df[column_name].values))[0]
-        copilots = df[df[column_name] == A][[x, y]]
-        not_copilots = df[df[column_name] != A][[x, y]]
+    Returns:
+        None: Displays or saves the scatter plots.
+    """
+    A = list(set(df[column_name].values))[0]
+    copilots = df[df[column_name] == A][[x, y]]
+    not_copilots = df[df[column_name] != A][[x, y]]
         b, a = np.polyfit(copilots[x].apply(lambda x: log(1+x)), copilots[y].apply(lambda x: log(x)), deg=1)
         xseq = np.linspace(min(copilots[x].apply(lambda x: log(1+x))), max(copilots[x].apply(lambda x: log(1+x))), num=100)
         b2, a2 = np.polyfit(not_copilots[x].apply(lambda x: log(1+x)), not_copilots[y].apply(lambda x: log(x)), deg=1)
