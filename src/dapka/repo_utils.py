@@ -100,7 +100,13 @@ def get_list_of_all_prs(owner: str, repo: str, state:str = "merged", limit:int =
     We assume that the GitHub CLI (`gh`) and `jq` are installed and configured on the system where this function is executed.
     """
     cmd = f"gh pr list --repo {owner}/{repo} --state {state} -L {limit} --json number | jq '.[].number'"
-    gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+    try:
+        gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to fetch listing of pull requests: {e}")
+        logger.error(f"stdout: {e.output}")
+        logger.error(f"stderr: {e.stderr}")
+        raise e
     pr_numbers = [int(pr_num) for pr_num in gh_cli_output.stdout.split('\n') if len(pr_num) > 0]
     logger.info(f"Found {len(pr_numbers)} pull requests in {owner}/{repo}")
     return pr_numbers
@@ -122,7 +128,13 @@ def get_pr_comments(owner: str, repo: str, login:str, state:str = "all", limit:i
     logger.info(f"Getting pull requests with comments in {owner}/{repo}")
     # now we need to get the PR numbers from the comments
     cmd = f"gh pr list --repo {owner}/{repo} --state {state} --json number,reviews --limit {limit}"
-    gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+    try:
+        gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to fetch pull requests: {e}")
+        logger.error(f"stdout: {e.output}")
+        logger.error(f"stderr: {e.stderr}")
+        raise e
     # Parse the output to extract pull request numbers and review ids
     pr_nums_n_comments = loads(gh_cli_output.stdout)
     return pr_nums_n_comments
@@ -137,9 +149,15 @@ def get_pr_open_closed_and_state(owner: str, repo: str, pr_number:int) -> dict[s
     Returns:
         dict: A dictionary with pull request numbers as keys and their open/closed state as values.
     """
-    json_fields = "updatedAt,mergedAt,mergedBy,isDraft,state,closed,closedAt,number,labels,author,createdAt"
+    json_fields = "updatedAt,mergedAt,mergedBy,isDraft,state,closed,closedAt,number,labels,author,createdAt,id,additions,deletions"
     cmd = f"gh pr view {pr_number!r} --repo {owner}/{repo} --json {json_fields}"
-    gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+    try:
+        gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to fetch pull request {pr_number} with exception: {e}")
+        logger.error(f"stdout: {e.output}")
+        logger.error(f"stderr: {e.stderr}")
+        raise e
     pr_state_data = loads(gh_cli_output.stdout)
     pr_state = dict()
     for key in json_fields.split(","):
