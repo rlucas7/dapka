@@ -92,6 +92,6 @@ def scatterplots_ai_vs_non_ai(df: pd.DataFrame, column_name:str, metric_column_n
             plt.savefig(f"scatterplot_{x}_by_{column_name}_metric_{y}.png")
         else:
             plt.show()
-        plt.close(fig)
+        plt.close()
         logger.info(f"Plotting scatterplot for {column_name} and {y}")
         logger.info("Done plotting scatterplots")
