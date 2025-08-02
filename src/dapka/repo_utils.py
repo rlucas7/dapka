@@ -132,7 +132,7 @@ def get_pr_comments(owner: str, repo: str, login:str, state:str = "all", limit:i
         gh_cli_output = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to fetch pull requests: {e}")
-        logger.error(f"stdput: {e.output}")
+        logger.error(f"stdout: {e.output}")
         logger.error(f"stderr: {e.stderr}")
         raise e
     # Parse the output to extract pull request numbers and review ids
